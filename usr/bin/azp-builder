@@ -1,0 +1,65 @@
+#!/bin/bash
+
+### AZP Paket Sistemi 2.5
+# AZP Offical Site: https://azp-paket-sistemi.github.io
+# AZP Offical Depo: https://azp-paket-sistemi.github.io/azp-depo
+
+# 2022 AZP
+# 2019-2022 PacPERRO OS
+
+# Tərcümə faylı
+TEXTDOMAINDIR=/usr/share/locale
+TEXTDOMAIN=azp-build
+
+# Bəzi teglər :)
+error=$(echo -e "\033[1;31m E: \033[:0m")
+process=$(echo -e "\033[1;34m P: \033[:0m")
+finished=$(echo -e "\033[1;32m F: \033[:0m")
+
+depends1="zip"
+depends2="tar"
+if ! which $depends1 &> /dev/null;
+then
+  echo "$error" "$depends1" $" -- not installed !"
+  exit
+fi
+if ! which $depends2 &>/dev/null;
+then
+  echo "$error" "$depends2" $" -- not installed !"
+  exit
+fi
+
+echo -e "\033[1;32m AZP Package Builder \033[:0m"
+sleep 0.3
+
+if [[ $1 == "--build" ]]
+then
+  project=$2
+  cd $project
+  if [ ! -f files ]
+  then
+    echo "$error" $"'files' not found !"
+    exit
+  fi
+  if ! cd src &>/dev/null;
+  then
+    echo "$error" $"'src' folder not found !"
+    exit
+  fi
+  tar -cvjSf ../src.tar.bz2 * &>/dev/null
+  cd ..
+  rm -r src
+  read -p $"App Name: " app_name
+  read -p $"App Version: " app_version
+  read -p $"App Description: " app_description
+  read -p $"App Maintainer: " app_maintainer
+  echo "$process" $"Package build..."
+  sleep 0.2
+  echo "$app_name" >> app-name
+  echo "name: $app_name" >> info
+  echo "description: $app_description" >> info
+  echo "version: $app_version" >> info
+  echo "maintainer: $app_maintainer" >> info
+  zip -r ../$app_name-$app_version.azp * &>/dev/null
+  echo "$finished" "$app_name-$app_version.azp " $"build finished"
+fi
