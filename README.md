@@ -1,2 +1,5 @@
 # azp-builder
-Turn your project into an azp package
+AZP Paketi yığmaq üçün tool
+
+Paket yığmaq üçün:
+  `azp-builder --build <project>`
