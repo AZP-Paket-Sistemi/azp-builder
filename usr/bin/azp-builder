@@ -1,6 +1,6 @@
 #!/bin/bash
 
-### AZP Paket Sistemi 2.5
+### AZP Paket Sistemi 3.0
 # AZP Offical Site: https://azp-paket-sistemi.github.io
 # AZP Offical Depo: https://azp-paket-sistemi.github.io/azp-depo
 
@@ -16,18 +16,14 @@ error=$(echo -e "\033[1;31m E: \033[:0m")
 process=$(echo -e "\033[1;34m P: \033[:0m")
 finished=$(echo -e "\033[1;32m F: \033[:0m")
 
-depends1="zip"
-depends2="tar"
-if ! which $depends1 &> /dev/null;
-then
-  echo "$error" "$depends1" $" -- not installed !"
-  exit
-fi
-if ! which $depends2 &>/dev/null;
-then
-  echo "$error" "$depends2" $" -- not installed !"
-  exit
-fi
+depends="zip tar"
+for d in ${depends};
+do
+  if ! command -v "${d}" &>/dev/null; then
+    echo "$error" "${d}" $" -- not installed !"
+    exit
+  fi
+done
 
 echo -e "\033[1;32m AZP Package Builder \033[:0m"
 sleep 0.3
@@ -36,19 +32,20 @@ if [[ $1 == "--build" ]]
 then
   project=$2
   cd $project
-  if [ ! -f files ]
+  tar -cvjSf src.tar.bz2 * &>/dev/null
+  for src in $(ls -d *);
+  do
+    [[ -d ${src} ]] && rm -r ${src}
+  done
+  read -p "Do you want a add the depends ? [h/y]: " dp_add
+  if [ $dp_add == "h" ]
   then
-    echo "$error" $"'files' not found !"
-    exit
+    read -p "Depends: " d
+    for dep in $d;
+    do
+      echo "${dep}" >> depends
+    done
   fi
-  if ! cd src &>/dev/null;
-  then
-    echo "$error" $"'src' folder not found !"
-    exit
-  fi
-  tar -cvjSf ../src.tar.bz2 * &>/dev/null
-  cd ..
-  rm -r src
   read -p $"App Name: " app_name
   read -p $"App Version: " app_version
   read -p $"App Description: " app_description
