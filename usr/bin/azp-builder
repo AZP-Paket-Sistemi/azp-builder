@@ -1,6 +1,6 @@
 #!/bin/bash
 
-### AZP Paket Sistemi 3.0
+### AZP Builder 1.5
 # AZP Offical Site: https://azp-paket-sistemi.github.io
 # AZP Offical Depo: https://azp-paket-sistemi.github.io/azp-depo
 
@@ -9,7 +9,7 @@
 
 # Tərcümə faylı
 TEXTDOMAINDIR=/usr/share/locale
-TEXTDOMAIN=azp-build
+TEXTDOMAIN=azp-builder
 
 # Bəzi teglər :)
 error=$(echo -e "\033[1;31m E: \033[:0m")
@@ -30,6 +30,15 @@ sleep 0.3
 
 if [[ $1 == "--build" ]]
 then
+  if ! [[ "$2" != "" ]]
+  then
+    echo "$error" $"The project folder was not selected !"
+    exit
+  fi
+  if ! [ -d $2 ]
+  then
+    exit
+  fi
   project=$2
   cd $project
   tar -cvjSf src.tar.bz2 * &>/dev/null
@@ -37,7 +46,7 @@ then
   do
     [[ -d ${src} ]] && rm -r ${src}
   done
-  read -p "Do you want a add the depends ? [h/y]: " dp_add
+  read -p $"Do you want a add the depends ? [h/y]: " dp_add
   if [ $dp_add == "h" ]
   then
     read -p "Depends: " d
@@ -50,13 +59,14 @@ then
   read -p $"App Version: " app_version
   read -p $"App Description: " app_description
   read -p $"App Maintainer: " app_maintainer
-  echo "$process" $"Package build..."
   sleep 0.2
   echo "$app_name" >> app-name
   echo "name: $app_name" >> info
   echo "description: $app_description" >> info
   echo "version: $app_version" >> info
   echo "maintainer: $app_maintainer" >> info
+   [[ $app_description == "*" ]] && read -p $"description file: " dfi && more_description=$(cat $dfi) && echo "description: $more_description" >> info
+  echo "$process" $"Package build..."
   zip -r ../$app_name-$app_version.azp * &>/dev/null
   echo "$finished" "$app_name-$app_version.azp " $"build finished"
 fi
