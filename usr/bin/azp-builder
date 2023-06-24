@@ -1,11 +1,10 @@
 #!/bin/bash
 
-### AZP Builder 2.5
+### AZP Builder 3.0
 # AZP Offical Site: https://azp-paket-sistemi.github.io
 # AZP Offical Depo: https://azp-paket-sistemi.github.io/azp-depo
 
 # © 2021-2023 AZP
-# © 2019-2023 PacPERRO
 
 # Tərcümə faylı
 TEXTDOMAINDIR=/usr/share/locale
@@ -26,9 +25,15 @@ do
   fi
 done
 
+if [ ! $UID -ne 0 ]
+then
+  echo "$error" $"Please do not open with root!" &>/dev/stderr
+  exit 1
+fi
+
 if [[ "$1" == "" ]]
 then
-  echo -e "\033[1;32m |-- AZP Builder -- 2.5 --| \033[:0m"
+  echo -e "\033[1;32m |-- AZP Builder -- 3.0 --| \033[:0m"
   echo "-----------------------------------------"
   echo -e "\033[1;36m Yardım: -h \033[:0m"
   echo -e "\033[1;36m Help: -h \033[:0m"
@@ -55,12 +60,15 @@ then
   app_maintainer=$(sed -n 4p azp_data)
   app_architecture=$(sed -n 5p azp_data)
   echo "$process" $"Create 'src.tar.bz2' package..."
+  mkdir -p ../paket
+  paket="../paket"
+  mv * $paket
+  cd $paket
   cd azpsrc
   tar -cvjSf ../src.tar.bz2 * &>/dev/null
   # md5sum yazdırma
   echo "$(find . -type f -exec md5sum {} + | LC_ALL=C sort)" >> ../src_md5sum
   cd ..
-  rm -r azpsrc
   sleep 0.2
   echo "$process" $"Write data..."
   echo "${app_name:6}" >> app-name
@@ -77,10 +85,31 @@ then
   echo "maintainer: ${app_maintainer:12}" >> info
   echo "architecture: ${app_architecture:14}" >> info
   printf "$longdescription" >> info
-  rm -r azp_data
   echo "$process" $"Package build..."
   build_package_name=''${app_name:6}'_'${app_version:9}'.azp'
+  mv app-name info src_md5sum postins postrm preins prerm depends src.tar.bz2 ../$datafolder &>/dev/null
+  cd ../$datafolder
+  echo "$process" $"Create json package data file..."
+  datafilename="${app_name:6}_${app_version:9}_data.json"
   zip ../"$build_package_name" *
+  echo """[
+{
+  \"package\": {
+    \"name\": \"${app_name:6}\",
+    \"version\": \"${app_version:9}\",
+    \"size\": \"$(du -h ../$build_package_name | awk '{print $1}')\",
+    \"architecture\": \"${app_architecture:14}\",
+    \"date\": \"$(date +'%d-%m-%Y -- %H:%M')\",
+    \"md5sum\": \"$(md5sum ../$build_package_name | awk '{print $1}')\"
+  }
+
+}
+]""" >> ../$datafilename
+  rm -r src.tar.bz2 app-name info src_md5sum
+  cd $paket
+  mv * ../$datafolder
+  cd ..
+  rm -r paket
   echo "$finished" "$build_package_name" $"== build finished"
 fi
 
@@ -263,13 +292,38 @@ then
   echo "$finished" "$build_package_name" $"== build finished"
 fi
 
+# 'azpweb' faylını hazırlama
+if [[ "$1" == "-create-azpweb" ]]
+then
+  webfilename=$2
+  [[ "$webfilename" == "" ]] && echo "$error" $"Web file was not selected !" && exit 1
+  echo "$process" "$webfilename.azpweb" $"== create web file..."
+  touch $webfilename.azpsh
+  chmod u+x $webfilename.azpsh
+  echo '''<?xml version="1.0" encoding="UTF-8"?>
+<!-- AZP veb yükləmə -->
+<!-- AZP web download -->
+<azp-web>
+    <name></name>
+    <description></description>
+    <version></version>
+    <package></package>
+    <size></size>
+    <source></source>
+    <architecture></architecture>
+</azp-web>
+'''  >> $webfilename.azpweb
+  echo "$finished" $"Process finished"
+fi
+
 # Yardım
 if [[ "$1" == "-h" ]]
 then
-  echo "$info" "<< AZP Builder -- 2.5 >>"
+  echo "$info" "<< AZP Builder -- 3.0 >>"
   echo "$info" "azp-builder -build [folder]" $"== Build AZP package"
   echo "$info" "azp-builder -build-azpsrc [folder]" $"== Build .azpsrc source package"
   echo "$info" "azp-builder -create-data [folder]" $"== Create 'azp_data' data file"
   echo "$info" "azp-builder -create-azpsrc [folder]" $"== Create .azpsrc source package"
   echo "$info" "azp-builder -create-azpsh [name]" $"== Create .azpsh source script"
+  echo "$info" "azp-builder -create-azpweb [name]" $"== Create .azpweb web download file"
 fi
